@@ -10,7 +10,7 @@
 # =============================================================================
 
 - name: "Trocar senha dos switches (Arista / Cisco / Juniper)"
-  hosts: all
+  hosts: routers
   gather_facts: false
   vars:
     new_password: "redhat*99"
@@ -18,12 +18,11 @@
 
   tasks:
     # ------------------------- ARISTA EOS ---------------------------------
+    # Minimalista: so troca a senha do user existente (sem mexer em role/priv).
     - name: "Arista | eos_user — nova senha"
       arista.eos.eos_user:
         name: "{{ target_user }}"
         configured_password: "{{ new_password }}"
-        privilege_level: 15
-        role: network-admin
         state: present
       when: "'arista' in group_names"
       no_log: true
