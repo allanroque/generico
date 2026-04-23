@@ -10,7 +10,7 @@
 # =============================================================================
 
 - name: "Trocar senha dos switches (Arista / Cisco / Juniper)"
-  hosts: switches
+  hosts: all
   gather_facts: false
   vars:
     new_password: "redhat*99"
