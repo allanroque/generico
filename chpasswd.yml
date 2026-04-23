@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# chpasswd.yml — Playbook UNICO, multi-vendor, condicionado por grupo.
+# Troca a senha de {{ ansible_user }} em Arista / Cisco / Juniper.
+#
+# Uso:
+#   ansible-playbook playbooks/chpasswd.yml
+#   ansible-playbook playbooks/chpasswd.yml --limit dc1
+#   ansible-playbook playbooks/chpasswd.yml -e new_password='OutraSenha!'
+# =============================================================================
+
+- name: "Trocar senha dos switches (Arista / Cisco / Juniper)"
+  hosts: switches
+  gather_facts: false
+  vars:
+    new_password: "redhat*99"
+    target_user: "{{ ansible_user }}"
+
+  tasks:
+    # ------------------------- ARISTA EOS ---------------------------------
+    - name: "Arista | eos_user — nova senha"
+      arista.eos.eos_user:
+        name: "{{ target_user }}"
+        configured_password: "{{ new_password }}"
+        privilege_level: 15
+        role: network-admin
+        state: present
+      when: "'arista' in group_names"
+      no_log: true
+
+    - name: "Arista | salvar startup-config"
+      arista.eos.eos_config:
+        save_when: modified
+      when: "'arista' in group_names"
+
+    # ------------------------- CISCO IOS / IOS-XE -------------------------
+    - name: "Cisco | ios_user — nova senha"
+      cisco.ios.ios_user:
+        name: "{{ target_user }}"
+        configured_password: "{{ new_password }}"
+        privilege: 15
+        state: present
+      when: "'cisco' in group_names"
+      no_log: true
+
+    - name: "Cisco | salvar startup-config"
+      cisco.ios.ios_config:
+        save_when: modified
+      when: "'cisco' in group_names"
+
+    # ------------------------- JUNIPER JUNOS ------------------------------
+    - name: "Juniper | junos_user — nova senha"
+      junipernetworks.junos.junos_user:
+        name: "{{ target_user }}"
+        role: super-user
+        encrypted_password: "{{ new_password | password_hash('sha512') }}"
+        state: present
+      when: "'juniper' in group_names"
+      no_log: true
+
+    - name: "Juniper | commit"
+      junipernetworks.junos.junos_config:
+        confirm_commit: true
+      when: "'juniper' in group_names"
